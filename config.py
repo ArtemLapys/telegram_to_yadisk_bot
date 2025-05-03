@@ -3,11 +3,18 @@
 import os
 import json
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
 
-API_TOKEN = os.getenv("API_TOKEN")
+API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
 YADISK_TOKEN = os.getenv("YADISK_TOKEN")
 
-# Загружаем словарь токенов пользователей из JSON-строки
-TOKENS = json.loads(os.getenv("USER_TOKENS", "{}"))
+
+tokens_str = os.getenv("USER_TOKENS", "{}")
+logging.debug("USER_TOKENS raw value: %s", tokens_str)
+try:
+    TOKENS = json.loads(tokens_str)
+except json.JSONDecodeError as e:
+    logging.error("Ошибка при чтении USER_TOKENS: %s", e)
+    TOKENS = {}
