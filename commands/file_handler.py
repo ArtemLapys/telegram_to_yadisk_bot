@@ -75,7 +75,7 @@ async def handle_file(message: types.Message, bot:Bot, state: FSMContext, **data
 
     # Проверяем, прошло ли больше 5 минут с последнего взаимодействия
     if last_interaction and datetime.now() - last_interaction > timedelta(minutes=5):
-        await message.answer("⏰ Время сеанса для загрузки файла истекло. Пожалуйста, используйте команду /upload, чтобы снова выбрать папку для загрузки.", parse_mode="Markdown")
+        await message.answer("⏰ Время сеанса для загрузки файла истекло. Пожалуйста, используйте команду `/upload`, чтобы снова выбрать папку для загрузки.", parse_mode="Markdown")
         return
 
     # Если прошло менее 5 минут, продолжаем обработку
@@ -180,7 +180,7 @@ async def handle_file(message: types.Message, bot:Bot, state: FSMContext, **data
         
 
     elif message.video:
-        await message.reply(f"✅ Видео '{file_name}' загружено в {folder_path} под именем {random_name} \n\nВы можете продолжать загружать файлы в течение 5 минут в эту папку или выбрать другую папку для загрузки..", parse_mode=None)
+        await message.reply(f"✅ Видео '{file_name}' загружено в {folder_path} под именем {random_name} \n\nВы можете продолжать загружать файлы в течение 5 минут в эту папку или выбрать другую папку для загрузки.", parse_mode=None)
 
     # Обновляем время последнего взаимодействия
     await state.update_data(last_interaction=datetime.now())

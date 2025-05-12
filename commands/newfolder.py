@@ -20,13 +20,13 @@ async def handle_new_folder(message: types.Message, state: FSMContext):
 
     # Проверяем, прошло ли больше 5 минут с последнего взаимодействия
     if last_interaction and datetime.now() - last_interaction > timedelta(minutes=5):
-        await message.answer("❗ Время для выбора папки истекло. Пожалуйста, используйте команду /upload, чтобы снова выбрать папку.", parse_mode="Markdown")
+        await message.answer("❗ Время для создания папки истекло. Пожалуйста, используйте команду `/upload`, чтобы снова выбрать путь в котором необходимо создать папку.", parse_mode="Markdown")
         return
 
     # Получаем имя новой папки
     folder_name = message.text.replace("/newfolder ", "").strip()
     if not folder_name:
-        await message.answer("❌ Ошибка: Укажите имя новой папки. Пример: `/newfolder МояПапка`", parse_mode="Markdown")
+        await message.answer("❌ Ошибка: Укажите имя новой папки. Пример: `/newfolder [имя]`", parse_mode="Markdown")
         return
 
     # Создаем новую папку
@@ -53,7 +53,7 @@ async def handle_new_folder(message: types.Message, state: FSMContext):
     # Отправляем новое меню с кнопками
     # current_folder_name = "Корневая папка Я.Диска" if current_folder == "/" else current_folder
     new_message = await message.answer(
-        f"📂 Текущая папка: {"Корневая папка Яндекс Диска" if current_folder=="/" else current_folder}\n\n✅ Папка `{folder_name}` успешно создана.\n\nВыберите существующую подпапку или создайте новую `/newfolder [имя]`",
+        f"📂 Текущая папка: {'Корневая папка Яндекс Диска' if current_folder=='/' else current_folder}\n\n✅ Папка `{folder_name}` успешно создана.\n\n {'❌ В эту папку нельзя загружать файлы.' if current_folder=='/' else '✅ Вы можете загружать файлы в эту папку.'} \n\nВыберите существующую подпапку или создайте новую `/newfolder [имя]`",
         reply_markup=keyboard,
         parse_mode="Markdown"
     )

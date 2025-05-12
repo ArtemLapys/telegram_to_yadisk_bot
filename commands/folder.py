@@ -19,13 +19,13 @@ async def handle_folder(message: types.Message, state: FSMContext, folder_index=
     data = await state.get_data()
     last_interaction = data.get("last_interaction")
     if last_interaction and datetime.now() - last_interaction > timedelta(minutes=5):
-        await message.answer("❗ Время для выбора папки истекло. Пожалуйста, используйте команду /upload, чтобы снова выбрать папку.", parse_mode="Markdown")
+        await message.answer("❗ Время для выбора папки истекло. Пожалуйста, используйте команду `/upload`, чтобы снова выбрать папку.", parse_mode="Markdown")
         return
 
     y = yadisk.YaDisk(token=YADISK_TOKEN)
     if not y.check_token():
         logging.error("Ошибка: Из /folder не подключились к Я.Диску. Неверный OAuth-токен.")
-        await message.answer("❌ Ошибка: Неверный OAuth-токен.")
+        await message.answer("❌ Ошибка: Неверный OAuth-токен Я.Диска. Повторите попытку.")
         return
 
     # Получаем текущий путь папки

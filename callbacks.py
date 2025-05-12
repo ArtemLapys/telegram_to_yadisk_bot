@@ -77,7 +77,7 @@ async def select_folder(callback: types.CallbackQuery, state: FSMContext):
     )
 
     # Проверяем, изменилось ли сообщение
-    new_text = f"📂 Текущая папка: {"Корневая папка Яндекс Диска" if updated_folder=="/" else updated_folder}\n\nВыберите подпапку или создайте новую `/newfolder [имя]`"
+    new_text = f"🗂 Текущая папка: {'Корневая папка Яндекс Диска' if updated_folder == '/' else updated_folder}\n\n {'❌ В эту папку нельзя загружать файлы.' if updated_folder=='/' else '✅ Вы можете загружать файлы в эту папку.'} \n\nВыберите подпапку или создайте новую `/newfolder [имя]`"
     if callback.message.text != new_text or callback.message.reply_markup != keyboard:
         await callback.message.edit_text(
             new_text,

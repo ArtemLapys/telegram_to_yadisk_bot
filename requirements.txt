@@ -4,5 +4,6 @@ python-dotenv  # For loading environment variables from .env
 yadisk  # For working with Yandex Disk API
 filetype  # For detecting file types
 logging  # Standard library, no need to install
-json  # Standard library, no need to install
-os  # Standard library, no need to install
+#json  # Standard library, no need to install
+#os  # Standard library, no need to install
+dotenv

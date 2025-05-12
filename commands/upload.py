@@ -52,7 +52,7 @@ async def cmd_upload(message: types.Message, state: FSMContext):
 
     # Отправляем новое сообщение с кнопками
     new_message = await message.answer(
-        f"📂 Текущая папка: `{"Корневая папка Яндекс Диска" if current_folder=="/" else current_folder}`\n\n{upload_permission}\n\nВыберите существующую подпапку или создайте новую `/newfolder [имя]`",
+        f"📂 Текущая папка: `{'Корневая папка Яндекс Диска' if current_folder=='/' else current_folder}`\n\n{'❌ В эту папку нельзя загружать файлы.' if current_folder=='/' else '✅ Вы можете загружать файлы в эту папку.'}\n\nВыберите существующую подпапку или создайте новую `/newfolder [имя]`",
         reply_markup=keyboard,
         parse_mode="Markdown"
     )
