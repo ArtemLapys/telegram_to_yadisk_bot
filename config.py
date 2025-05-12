@@ -12,7 +12,6 @@ YADISK_TOKEN = os.getenv("YADISK_TOKEN")
 
 
 tokens_str = os.getenv("USER_TOKENS", "{}")
-logging.debug("USER_TOKENS raw value: %s", tokens_str)
 try:
     TOKENS = json.loads(tokens_str)
 except json.JSONDecodeError as e:

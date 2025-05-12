@@ -1,4 +1,4 @@
-# Переходы между папками
+# Переходы между папками, выбор папки
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 from auth import check_auth
@@ -8,8 +8,10 @@ import yadisk
 import os
 from states import Form
 from services.yadisk_service import get_current_path_and_subfolders  
+from keyboards import folder_keyboard
+import logging
 
-async def handle_folder(message: types.Message, state: FSMContext):
+async def handle_folder(message: types.Message, state: FSMContext, folder_index=None):
     if not await check_auth(message, state):
         return  # Выход, если пользователь не авторизован
 
@@ -28,7 +30,12 @@ async def handle_folder(message: types.Message, state: FSMContext):
 
     # Получаем текущий путь папки
     current_folder = data.get("folder_path", "/")
-    folder_index = message.text.replace("/folder ", "").strip()
+    
+    # Если folder_index передан через CallbackQuery
+    if folder_index is not None:
+        folder_index = folder_index.strip()
+    else:
+        folder_index = message.text.replace("/folder ", "").strip()
 
     # Если это команда для возврата на уровень выше
     if folder_index == '0':
@@ -56,16 +63,13 @@ async def handle_folder(message: types.Message, state: FSMContext):
         await message.answer(f"❌ Ошибка: Папка '{selected_folder}' не существует.")
         return
 
-    # Получаем подпапки
-    subfolders = [folder["name"] for folder in y.listdir(selected_folder) if folder["type"] == "dir"]
-    subfolders_message = "\n".join([f"{idx+1}. {subfolder}" for idx, subfolder in enumerate(subfolders)])
-
+    # Обновляем текущую папку
     await state.update_data(folder_path=selected_folder)
 
+    # Получаем подпапки
     message_text, current_path = await get_current_path_and_subfolders(state)
     await message.answer(message_text, parse_mode="Markdown")
 
-
-    
+    # Устанавливаем состояние ожидания файла
     await state.set_state(Form.waiting_for_file)
     await state.update_data(last_interaction=datetime.now())

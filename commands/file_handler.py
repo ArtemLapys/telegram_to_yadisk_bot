@@ -7,12 +7,14 @@ from datetime import datetime, timedelta
 import random
 import string
 import os
-from services.yadisk_service import upload_to_yadisk
+from services.yadisk_service import upload_to_yadisk, get_yadisk
 from services.yadisk_service import get_current_path_and_subfolders  
 import logging
 import asyncio
 import filetype
 from aiogram import exceptions
+from keyboards import folder_keyboard_with_pagination  # Импортируем клавиатуру
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 
 def generate_random_filename(filename: str, user_name: str, file_type: str) -> str:
@@ -61,9 +63,11 @@ async def handle_file(message: types.Message, bot:Bot, state: FSMContext, **data
         return
 
     current_state = await state.get_state()
-    if current_state != Form.waiting_for_file:
-        await message.answer("❌ Сначала выберите папку с помощью /upload, /folder или создайте новую /newfolder.", parse_mode="Markdown")
-        return
+    #ЭТО НЕ УДАЛЯТЬ, ОБЯЗАТЕЛЬНО СОХРАНИТЬ!
+    #if current_state != Form.waiting_for_file:
+    #    logging.info(Form.waiting_for_file)
+    #    await message.answer("❌ Сначала выберите папку с помощью /upload, /folder или создайте новую /newfolder.", parse_mode="Markdown")
+    #    return
 
     # Получаем данные о времени последнего взаимодействия
     data = await state.get_data()
@@ -77,9 +81,41 @@ async def handle_file(message: types.Message, bot:Bot, state: FSMContext, **data
     # Если прошло менее 5 минут, продолжаем обработку
     folder_path = data.get("folder_path")
     if not folder_path:
-        await message.answer("❌ Ошибка: папка не выбрана.\nВведите номер подпапки(`/folder [номер]`) или создайте новую (`/newfolder [имя]`).", parse_mode="Markdown")
-        message_text, current_path = await get_current_path_and_subfolders(state)
-        await message.answer(message_text, parse_mode="Markdown")
+        y = get_yadisk()
+        if not y:
+            await message.answer("❌ Ошибка: Не удалось подключиться к Яндекс.Диску.")
+            return
+
+        # Получаем текущую папку из состояния FSM
+        current_folder = data.get("folder_path", "/")
+        folders = [folder["name"] for folder in y.listdir(current_folder) if folder["type"] == "dir"]
+
+        # Формируем клавиатуру с кнопками выбора папок
+        keyboard = await folder_keyboard_with_pagination(
+            folders,
+            page=0,
+            include_back=current_folder != "/",
+            is_root=current_folder == "/",
+            state=state
+        )
+
+        # Удаляем предыдущее сообщение, если оно есть
+        last_message_id = data.get("last_message_id")
+        if last_message_id:
+            try:
+                await message.bot.delete_message(chat_id=message.chat.id, message_id=last_message_id)
+            except Exception as e:
+                logging.warning(f"Не удалось удалить старое сообщение: {e}")
+
+        # Отправляем новое сообщение с кнопками
+        current_folder_name=""
+        new_message = await message.answer(f"❌ Ошибка: папка не выбрана.\n\n 📂 Текущая папка: {"Корневая папка Яндекс Диска" if current_folder=="/" else current_folder} \n\nВыберите папку из списка ниже или создайте новую `/newfolder [имя]`.",
+            reply_markup=keyboard,
+            parse_mode="Markdown"
+        )
+
+        # Сохраняем ID нового сообщения
+        await state.update_data(last_message_id=new_message.message_id)
         return
 
     # Запрещаем загрузку файлов в корень Яндекс.Диска
@@ -99,7 +135,7 @@ async def handle_file(message: types.Message, bot:Bot, state: FSMContext, **data
     try:
         await bot.download_file(file_info.file_path, local_file_path, timeout=500)
     except asyncio.TimeoutError:
-        logging.error(f"Timeout error while downloading file: {file_info.file_path}")
+        logging.error(f"Ошибка. Вышло время скачивания файла с серверов телеграмм: {file_info.file_path}")
         await bot.send_message(chat_id=bot.chat_id, text=f"⏳ Мы не смогли скачать файл {file_name} из телеграмм - время ожидания истекло, попробуйте снова позже.")
     except exceptions.TelegramNetworkError as e:
         logging.error(f"Ошибка при скачивании файла '{file_name}': {e}")
@@ -132,10 +168,19 @@ async def handle_file(message: types.Message, bot:Bot, state: FSMContext, **data
     await upload_to_yadisk(local_file_path, yadisk_path, random_name)
     os.remove(local_file_path)
 
+    keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [InlineKeyboardButton(text="📂 Выбрать папку", callback_data="upload")]
+            ]
+    )
+
     if message.document:
-        await message.reply(f"✅ Файл '{file_name}' загружен в {folder_path} под именем {random_name}.", parse_mode=None)
+ 
+        await message.reply(f"✅ Файл '{file_name}' загружен в {folder_path} под именем {random_name} \n\nВы можете продолжать загружать файлы в течение 5 минут в эту папку или выбрать другую папку для загрузки.", parse_mode=None, reply_markup=keyboard)
+        
+
     elif message.video:
-        await message.reply(f"✅ Видео '{file_name}' загружено в {folder_path} под именем {random_name}.", parse_mode=None)
+        await message.reply(f"✅ Видео '{file_name}' загружено в {folder_path} под именем {random_name} \n\nВы можете продолжать загружать файлы в течение 5 минут в эту папку или выбрать другую папку для загрузки..", parse_mode=None)
 
     # Обновляем время последнего взаимодействия
     await state.update_data(last_interaction=datetime.now())
